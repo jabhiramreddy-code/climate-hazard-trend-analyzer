@@ -1,90 +1,43 @@
 # Verification record
 
-## Executed checks
+Last updated: 2026-10-15. Results below distinguish developer-run checks from checks performed through Codex tools.
 
-- Read both pages of the supplied case study using PDF content-stream extraction.
-- Read back the created project files.
-- Parsed App.jsx, TrendChart.jsx, main.jsx, export.js, export.test.js, and vite.config.js with the Babel JSX parser from the local npm cache. All six parsed successfully.
-- Executed nine direct assertions against the actual CSV module in the Node runtime. Quoting, embedded newlines, formula protection, missing values, annual data, methodology metadata, CRLF rows, and numeric negative coordinates/temperatures passed.
+## Developer-run checks
 
-- Parsed the Docker CMD as JSON and checked its shell arguments. This is not a Docker build/run test.
-- Completed an independent read-only review; see [review decisions](REVIEW.md).
+- **Backend:** latest reported rerun passed all 39 tests after installing the updated development requirements. The preceding pasted output showed 39 passed, 1 warning in 2.06 seconds. The warning concerned Starlette TestClient's deprecated HTTPX fallback; `httpx2>=2,<3` was added to development requirements. Warning-free output was not separately supplied.
+- **Frontend:** pasted `npm test` output showed 3 passed and 0 failed in 158.227 ms. The production build was confirmed successful.
+- **Manual browser checks:** New Delhi 1990–2020; frequency, duration and intensity charts and tooltips; annual and event tables; CSV values compared with displayed data; another city and custom coordinates; invalid year validation; loading/error states; phone-sized layout; Tab/Enter controls; and backend logs were confirmed working.
+- **Local persistence:** after stopping and restarting the backend, previously analyzed New Delhi and Bengaluru returned stored results.
+- **Docker:** supplied runtime logs showed successful startup and three analysis requests returning HTTP 200. After stopping and rerunning the container with the same `climate-data` named volume, the developer confirmed Stored analysis.
 
-## Environment blockers
+## Checks performed through Codex tools
 
-The shell tool cannot create a process: helper_unknown_error: setup refresh had errors. This occurred for workspace discovery, an explicit PowerShell invocation, and the Python test command. A Python process requested from the Node runtime also returned EACCES. Direct package/API network requests from Node returned EACCES.
+- Read both pages of the supplied assessment and reviewed the project files.
+- Parsed all six frontend JavaScript/JSX files with Babel. Executed nine direct assertions against the CSV module, including escaping, formula protection, metadata, CRLF rows and preservation of negative numeric values. Parsed Docker CMD as JSON.
+- Completed an independent read-only source review and applied corrections; see [review decisions](REVIEW.md).
+- Confirmed local New Delhi and Bengaluru cache hits through HTTP. Returned summaries and computation timestamps matched persisted TinyDB documents.
+- Confirmed the local Docker service returned HTTP 200 for health, frontend HTML and the built JavaScript asset. A clean image rebuild was not independently run.
 
-An attempt to use Node's in-process test runner timed out and reset its kernel. That attempt is not counted as a passing test run. The first seven direct CSV assertions and five Babel parse checks completed before the reset. Final checks after reviewer corrections executed nine CSV assertions, parsed six files, and parsed Docker CMD JSON successfully.
+### API documentation fix
 
-## Required before submission
+The local /docs route originally returned HTML whose Content Security Policy blocked Swagger's CDN assets and inline initialization. Documentation-specific permissions were added while application/API responses retained their strict policy. Direct HTTP assertions passed for /docs, /docs/oauth2-redirect, /redoc, /api/health, /openapi.json, / and an unknown documentation path. Seven parameterized regression cases were added to the backend suite subsequently run by the developer. Documentation assets still require external CDN access.
 
-Run these from the repository root after restoring normal process/network access:
+The reported 404 for /.well-known/appspecific/com.chrome.devtools.json is optional [Chrome DevTools workspace discovery](https://developer.chrome.com/docs/devtools/automatic-workspaces), unrelated to the analyzer.
 
-1. python -m venv .venv
-2. .\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
-3. .\.venv\Scripts\python.exe -m pytest -c backend/pytest.ini backend/tests -q
-4. In frontend: npm install, npm test, and npm run build.
-5. Start Python and Vite using README.md, then analyze New Delhi for 1990–2020 using real Open-Meteo data. Repeat it to check the stored-analysis indicator.
-6. Check custom coordinates, invalid dates, chart metric switches, CSV download, empty-event results, event and annual tables, keyboard access, and mobile layout. Configure and verify trusted proxy handling and durable storage for the chosen deployment.
-7. Build/run Docker and verify /api/health and the frontend from the same origin.
-8. Push source to GitHub (excluding the PDF), deploy, test the public URL, then submit the two links.
+### Public deployment and repository
 
-Automated Python/frontend test results, the production build, cache persistence, Docker execution, GitHub publication and deployment have not been confirmed here. The user subsequently confirmed manual browser and real-data behavior as recorded below.
+Connected Chrome checks at [the Render deployment](https://climate-hazard-trend-analyzer-2ljf.onrender.com/) confirmed:
 
-## Documentation blank-page fix (2026-10-15)
+- The application loaded and /api/health returned status ok and latest_complete_year 2025.
+- New Delhi, 1990–2020, returned Stored analysis: 71 events, 428 heatwave days, longest event 21 days, threshold 41.5 °C and 100% coverage.
+- Mumbai, 1990–2020, completed: 54 events, 222 heatwave days, longest event 10 days, threshold 33.7 °C and 100% coverage. Repeating the request returned Stored analysis.
+- Duration, Intensity and Frequency controls changed the chart metric labels.
 
-The running local server was reachable from the Node runtime. Before the fix, GET /docs returned HTTP 200 with Swagger CDN URLs and an inline bootstrap, but its script-src allowed only self. A direct assertion that the Swagger CDN was permitted failed as expected.
+[GitHub](https://github.com/jabhiramreddy-code/climate-hazard-trend-analyzer) displayed the Public badge. The inspected main commit was `1757f3efcc19dba2da35e6655e6f423bcb9b3a80`; its Go to file query for .pdf returned no matches. This checked current filenames, not the complete Git history or a separate unsigned browser session.
 
-Updated backend/app/main.py to scope the CDN/inline-script permissions to the exact built-in documentation routes. Application and API responses retain their self-only script policy. Added parameterized regression tests in backend/tests/test_api.py.
+## Limits and remaining work
 
-After the running development server reloaded, direct HTTP assertions passed for /docs, /docs/oauth2-redirect, /redoc, /api/health, /openapi.json, / and /docs/not-a-doc-page. Documentation responses returned 200 with the required CSP sources; the health and schema JSON were valid; application/API/unknown documentation paths retained the strict policy. Existing nosniff and frame restrictions remained present.
-
-The pytest command still could not start through Codex's command runner (helper_unknown_error). The new pytest tests and visual browser rendering remain unverified here. Documentation assets still require access to their external CDN.
-
-## User-confirmed browser verification (2026-10-15)
-
-The user reported all ten TEMP_SETUP.md browser checks working: New Delhi 1990-2020 analysis; frequency/duration/intensity and tooltips; annual/event tables; downloaded CSV compared with displayed values; other city and custom coordinates; invalid year validation; loading/error messages; phone-sized viewport; Tab/Enter operation; and backend log inspection. These are user-reported results, not an automated browser run by Codex.
-
-The only reported log entry was an HTTP 404 for /.well-known/appspecific/com.chrome.devtools.json. This is Chrome DevTools automatic workspace discovery. Chrome documents that the missing optional file and its 404 can be ignored: https://developer.chrome.com/docs/devtools/automatic-workspaces . No application endpoint was added to suppress this harmless request.
-
-Automated test/build results, cache hits across backend restarts, Docker and public deployment remain unconfirmed.
-
-## User-reported backend test result (2026-10-15)
-
-The user reported the backend pytest result: **32 passed, 1 warning in 1.7 seconds**. This is the user's local execution result; Codex did not execute pytest through its blocked command runner. The warning text has been requested and remains unreviewed. Frontend test/build results, persisted cache reuse after a backend restart, Docker and deployment remain unconfirmed.
-
-## User-confirmed frontend production build (2026-10-15)
-
-The user confirmed the build succeeded after being instructed to run npm run build in frontend. This is a user-reported build result; Codex did not execute the build through its blocked command runner. The standard npm test result, backend warning review, cache reuse after a backend restart, Docker and public deployment remain unconfirmed. A successful frontend build does not establish Docker build success or public deployment.
-
-## Frontend test output supplied by user (2026-10-15)
-
-The user pasted the output of npm test from frontend, running node --test tests/*.test.js: **3 tests passed, 0 failed, 0 cancelled, 0 skipped, 0 todo**, total duration **158.227 ms**. The tests cover CSV escaping/formula protection; annual values, methodology and CRLF output; and preservation of negative numeric coordinates/temperatures. This is supplied local execution output, not a test run initiated by Codex.
-
-Backend tests (32 passed, 1 warning in 1.7 seconds), frontend build and ten manual browser checks are also user-confirmed. Remaining verification includes the backend warning text, persisted cache reuse after restart, Docker, hosted storage/proxy behavior and public deployment.
-
-## Backend warning diagnosis and dependency adjustment (2026-10-15)
-
-Latest supplied pytest output: **39 passed, 1 warning in 2.06 seconds**. The warning is StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead. Local package metadata shows FastAPI 0.143.1, Starlette 1.8.0 and HTTPX 0.28.1, with no HTTPX2 installation. The installed starlette/testclient.py imports httpx2 first and warns when falling back to httpx. Official documentation confirms this behavior: https://starlette.dev/testclient/ .
-
-Added httpx2>=2,<3 only to backend/requirements-dev.txt. Production weather requests continue to use the existing httpx requirement; no application imports or test fixtures changed. The previous warning is supplied pre-change evidence. An attempt to install the updated development requirements through Codex failed at process startup with helper_unknown_error. Dependency installation and a fresh full pytest run are required before claiming the warning has cleared.
-
-## Local cache persistence confirmed (2026-10-15)
-
-The user reported stopping the backend with Ctrl+C, restarting it and receiving stored analyses for previously analyzed New Delhi and Bengaluru. Codex then read the local database and made identical POST /api/analyze requests for both cities for 1990–2020. Both returned HTTP 200 with analysis_hit=true; their summary values and computation timestamps matched the persisted analysis documents. Only unexpired existing documents were selected, avoiding an uncached weather download.
-
-This confirms current local persisted-cache reuse following the user-reported restart. It does not establish hosted storage durability or Docker behavior. The user also reported another backend run with 39 tests passing after the dependency-change instructions; zero warnings were not explicitly reported.
-
-## Docker runtime and same-origin frontend/API verified (2026-10-15)
-
-The user supplied docker run output for image climate-analyzer, port 8000, and named volume climate-data mounted at /app/data. Uvicorn started successfully and logs show three POST /api/analyze requests returning HTTP 200. Codex then checked the reachable local service: GET /api/health returned HTTP 200 and status ok; GET / returned HTTP 200 HTML; the built /assets/index-ATn9wjas.js returned HTTP 200 JavaScript.
-
-This confirms the supplied Docker image runs and serves frontend and API together. Docker build output was not supplied; a clean rebuild was not independently initiated. Named-volume persistence across replacement and public deployment are not yet verified. README lockfile guidance was corrected to reflect the existing package-lock.json and Docker npm ci command.
-
-## Named Docker volume persistence confirmed (2026-10-15)
-
-After instructions to stop the running container and rerun it using the same climate-data named volume, the user confirmed the repeated analysis displayed Stored analysis. This is user-reported validation of cache retention across container replacement. Public repository publication, hosted deployment, hosted storage/proxy behavior and submission remain pending.
-
-## Repository URL supplied (2026-10-15)
-
-The user supplied https://github.com/jabhiramreddy-code/climate-hazard-trend-analyzer.git . Local .git/config contains an origin remote matching this repository. Attempts to independently fetch the GitHub page, public API metadata and raw README were unavailable: the web tool reported cache/access errors and direct Node HTTPS returned EACCES. These errors do not establish that the repository is private or missing. Public visibility and published PDF exclusion therefore remain to be checked in an unsigned browser session. No hosting action or submission was performed.
+- Codex's shell runner could not start processes, and direct Node network requests were blocked. Standard pytest/npm/build commands were run by the developer; Codex used file inspection, direct assertions, reachable local HTTP and connected Chrome for its checks.
+- A standalone automated browser suite, a public CSV download comparison, a provider network trace, cold-start recovery, durable hosted storage and separate-client proxy/rate-limit behavior were not tested. The complete local manual checklist was not repeated on the public deployment.
+- Render's free filesystem is ephemeral. Hosted caches can be lost on restart, redeploy or spin-down; this does not affect the confirmed local and Docker-volume persistence results.
+- Commit and push the final documentation, then submit the repository and deployment URLs with the AI-use disclosure through the external assessment form. The form has not been submitted.

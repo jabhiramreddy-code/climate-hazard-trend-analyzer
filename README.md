@@ -2,7 +2,9 @@
 
 A React and Python web application for exploring historical heatwave frequency, duration, and intensity at a selected city or coordinate.
 
-**Implementation status:** local checks are complete: 39 backend tests passed (user-reported rerun after the test dependency adjustment), three frontend tests passed, the frontend production build succeeded, and all ten manual browser checks passed. Local cache reuse after a backend restart is confirmed for New Delhi and Bengaluru. The Docker container starts successfully and serves the API and built React assets; supplied logs show successful analysis requests. The user confirmed cached results survive container replacement with the same named volume. The repository URL has been supplied and matches the local origin remote. Independent public-access verification, hosted deployment and submission remain pending. See [TODO.md](TODO.md) and the [verification record](docs/VERIFICATION.md) for evidence and remaining hosting checks.
+**Live demo:** [Open the analyzer](https://climate-hazard-trend-analyzer-2ljf.onrender.com/)
+
+**Source:** [GitHub repository](https://github.com/jabhiramreddy-code/climate-hazard-trend-analyzer)
 
 ## Features
 
@@ -13,9 +15,6 @@ A React and Python web application for exploring historical heatwave frequency, 
 - Annual data and detected-event tables, coverage warnings, and methodology notes.
 - Formula-safe CSV export including the location, threshold, baseline, source, and model.
 - Python ingestion of real Open-Meteo ERA5 data, with persistent NoSQL caches for daily records and computed results.
-- Input validation, request limits, bounded weather responses, timeouts, atomic database replacement, and controlled error responses.
-
-The application fetches real weather when an analysis is requested. It does not silently substitute demonstration or synthetic weather.
 
 ## Local setup on Windows
 
@@ -33,7 +32,7 @@ Open a second terminal in the repository root:
 
 ~~~powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ~~~
 
@@ -63,9 +62,9 @@ npm test
 npm run build
 ~~~
 
-The backend suite exercises actual climate calculations, TinyDB storage and FastAPI routes. Only the external HTTP transport is replaced with deterministic daily-weather fixtures. It covers strict percentile comparison, minimum duration, gaps, unit conversion, malformed/outlier values, year boundaries, baseline/annual coverage, regression, persisted cache reuse, expiry, bad inputs, provider errors/timeouts, and rate limiting.
+The backend tests cover heatwave calculations, data cleaning, coverage, regression, persisted caching, input validation, upstream failures and rate limiting. External weather requests use deterministic fixtures. Frontend tests cover CSV values, metadata, escaping and formula protection.
 
-The frontend tests cover CSV quoting, spreadsheet-formula protection, output values, metadata, and line endings. Build and browser checks are separate from these unit tests.
+Latest local results: **39 backend tests passed**, **3 frontend tests passed**, and the production build succeeded. Browser and persistence checks are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
 ## Architecture
 
@@ -92,9 +91,7 @@ React ← JSON → Chart.js / annual table / event table / CSV
 | frontend/src/export.js | CSV encoding and browser download |
 | Dockerfile / render.yaml | Same-origin container deployment |
 
-[TinyDB](https://tinydb.readthedocs.io/en/latest/intro.html) is a document-oriented NoSQL database implemented in Python. It avoids a database service/account for this small assessment. The JSON file is owned by one process; an in-process lock protects access, and writes flush to a temporary file before atomic replacement. It is not a substitute for MongoDB at larger scale.
-
-No previous application existed in this directory. The change introduces the modules, their frontend/API callers, tests, build configuration, deployment files, and documentation; it changes no existing user data.
+[TinyDB](https://tinydb.readthedocs.io/en/latest/intro.html) is a document-oriented NoSQL database. The weather and analyses collections store cleaned daily records and computed results in a local JSON file, avoiding a separate database service for this assessment.
 
 ## API
 
@@ -120,7 +117,7 @@ hazard can be omitted and defaults to heatwave. Unknown properties and unsupport
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/analyze -ContentType 'application/json' -Body '{"latitude":28.6139,"longitude":77.209,"start_year":1990,"end_year":2020,"hazard":"heatwave"}'
 ~~~
 
-The JSON response includes location, period, hazard, source, methodology, quality, summary, annual, events, trends, and cache. Chart-ready annual rows include events, heatwave_days, mean_duration, mean_exceedance, peak_temperature, coverage, eligible, and rolling values. Unavailable rolling/regression values are null, rather than fabricated zero trends.
+The JSON response includes location, period, hazard, source, methodology, quality, summary, annual, events, trends, and cache. Chart-ready annual rows include events, heatwave_days, mean_duration, mean_exceedance, peak_temperature, coverage, eligible, and rolling values. Unavailable rolling/regression values are null.
 
 | HTTP code | Meaning |
 | --- | --- |
@@ -162,29 +159,29 @@ These estimates are descriptive. They are not significance tests, climate attrib
 
 ## Caching, security and performance
 
-- Daily weather documents: seven-day TTL, at most eight documents.
-- Analysis documents: 24-hour TTL, at most 32 documents.
-- Keys include coordinates rounded to four decimal places, interval, model, and methodology version. Identical requests reuse persisted results, including after process restart when the database file is retained.
-- Expired/oldest documents are removed during writes. No provider error is stored as successful data.
-- No user-supplied URLs. Outbound requests go to a fixed HTTPS host, do not follow redirects, cap decoded responses at 16 MiB, use five-second connection and 45-second operation timeouts, and have a 75-second overall limit.
-- Rate limit: ten analysis requests per network peer per rolling minute. Idle limiter entries expire and the client-key count is bounded.
-- One uncached analysis runs at a time. A competing request waits up to one second, then receives a retryable busy response. Analysis/cache paths share the same lock, preventing duplicate fills in one worker.
-- Same-origin frontend/API, React text escaping, restrictive response headers, bounded full-year range, and spreadsheet-formula-safe CSV cells.
-- The container enables Uvicorn proxy handling with FORWARDED_ALLOW_IPS defaulting to 127.0.0.1. Behind a hosting proxy, peers can share the request limit until that proxy's verified IP addresses/CIDRs are configured. Configure only known trusted proxies; do not trust arbitrary X-Forwarded-For values. See [Uvicorn proxy settings](https://www.uvicorn.org/settings/). This deployment check remains outstanding.
-- Run **one worker and one replica** for the TinyDB file. The bounded document cache still rewrites a JSON file and performs synchronous local I/O, so this implementation is intended for small assessment/demo traffic.
+- Weather cache: seven-day lifetime, at most eight documents. Analysis cache: 24-hour lifetime, at most 32 documents. Expired and oldest entries are removed during writes.
+- Cache keys distinguish coordinates rounded to four decimal places and the requested interval; weather keys include the ERA5 model, and analysis keys include the methodology version. Identical requests reuse stored results while valid.
+- Outbound requests use a fixed HTTPS host, reject redirects, cap responses at 16 MiB, and apply connection, operation and overall timeouts. Provider failures return controlled errors and are not cached as successful data.
+- Coordinates, years and hazards are validated. Responses use security headers; React escapes text, and CSV export neutralizes spreadsheet formulas in string values.
+- Analysis requests are limited to ten per network peer per minute. One uncached analysis runs at a time; competing requests receive a retryable busy response.
+- The container trusts forwarded client addresses only from FORWARDED_ALLOW_IPS, defaulting to 127.0.0.1. Behind a hosting proxy, visitors may share a rate-limit bucket until verified proxy addresses are configured. See [Uvicorn proxy settings](https://www.uvicorn.org/settings/).
+
+TinyDB uses atomic file replacement and is intended for small assessment/demo traffic. Run **one worker and one replica**; its synchronous JSON-file writes do not support scaling across processes.
 
 ## Docker and deployment
+
+From the repository root, with Docker running:
 
 ~~~powershell
 docker build -t climate-analyzer .
 docker run --rm -p 8000:8000 --mount type=volume,source=climate-data,target=/app/data climate-analyzer
 ~~~
 
-The container builds React, installs Python requirements, serves both on one origin, runs as a non-root user, and uses one Uvicorn worker. The named Docker volume retains the database across container replacement.
+The container builds and serves React and FastAPI on one origin as a non-root user. The named Docker volume retains the database across container replacement.
 
 For Render, connect the source repository and create a Blueprint using render.yaml, or create a Docker Web Service manually. The included configuration uses the free plan, /api/health, and DATA_PATH=/tmp/climate/weather.json.
 
-[Render free services](https://render.com/docs/free) have an ephemeral filesystem and can spin down: caches are lost on restart, redeploy, or spin-down, and a later request re-downloads weather. For durable hosted NoSQL storage, use a paid persistent disk with DATA_PATH on its mount, or replace TinyDB with a managed MongoDB database before deploying replicas. Local/Docker volume persistence is supported independently of the hosting limitation.
+[Render free services](https://render.com/docs/free) can spin down and use an ephemeral filesystem: caches are lost on restart, redeploy or spin-down, and later requests download weather again. Durable hosted caching requires persistent storage, such as a paid disk or a managed MongoDB database.
 
 Environment variables:
 
@@ -195,23 +192,27 @@ Environment variables:
 | PORT | 8000 in Docker | Hosting platform's listening port |
 | FORWARDED_ALLOW_IPS | 127.0.0.1 | Verified trusted proxy addresses/CIDRs; never an unverified wildcard |
 
-No application credentials are required for local use. frontend/package-lock.json is present and Docker uses npm ci; commit the lockfile with the source. Python dependencies currently use bounded version ranges; pinning the verified Python dependency set would further improve deployment reproducibility.
+No weather API key is required for the configured public endpoint. Frontend dependencies are recorded in package-lock.json and installed with npm ci in Docker.
 
-### Submission steps remaining
+## Assumptions and limitations
 
-1. Backend tests, the frontend build and the manual real-data browser flow have user-reported passes. Frontend npm test output confirms three passes. The test dependency adjustment and backend rerun are complete; local cache reuse after a backend restart is confirmed.
-2. Create a public GitHub repository and push the source. **Exclude the confidential assessment PDF**, already covered by .gitignore and .dockerignore.
-3. Deploy the container, test the live URL, and submit the repository/app URLs through the separately supplied submission form.
-4. Disclose AI use in the submission form. A demo recording is optional.
+- Each location represents one ERA5 grid cell. City presets and custom coordinates are points, not city-wide or state-wide averages or bounding boxes.
+- The pooled annual 95th-percentile threshold emphasizes the hottest season. It is not a seasonally varying threshold or an official local warning definition.
+- Events touching the selected interval can be truncated, and runs with fewer than three observed days at a boundary can be missed.
+- The current partial calendar year is excluded.
 
-Repository: [jabhiramreddy-code/climate-hazard-trend-analyzer](https://github.com/jabhiramreddy-code/climate-hazard-trend-analyzer). The user supplied this URL and the local origin remote matches it; public visibility could not be independently checked from Codex. A deployed URL has not yet been supplied. No submission has been sent.
+## Improvements with more time
 
-## Assumptions and improvements with more time
+- Validate results against known records and add seasonal thresholds and uncertainty estimates.
+- Fetch extra days around interval boundaries to detect complete events.
+- Use MongoDB with indexes and shared request limits for multiple workers; cache reusable location/year chunks.
+- Pin the verified Python dependencies and add an automated browser test suite.
+- Add a region map, area aggregation or additional hazards after the core workflow.
 
-The selected region is one point/grid cell. City presets are conveniences, not area aggregates. The pooled annual p95 favors the hottest season; a calendar-day percentile baseline would capture anomalous heat in other seasons. Boundary-touching events can be truncated, and runs shorter than three observed days at a boundary may be missed. The current partial year is excluded.
+## AI tools used and how
 
-With more time: verify the production and scientific behavior against known records; use a seasonal threshold and baseline uncertainty estimates; add event-boundary context; move documents to MongoDB with indexes and shared rate limits; cache reusable location/year chunks; pin tested dependencies; add browser-level tests and a region map. Additional hazards and PDF export are intentionally outside the core scope.
-
-## AI tools used
-
-OpenAI Codex was used to interpret the brief, plan the work, create documentation, draft the React/Python source and tests, inspect official provider/hosting documentation, and perform available source/CSV checks. A separate Codex reviewer was used for a read-only code review. The author should review and understand all code and be prepared to explain or modify it during an interview. Unexecuted checks are disclosed above.
+- **OpenAI Codex:** assisted with requirements interpretation, implementation, tests, documentation, deployment configuration and debugging.
+- **Review agent:** one separate Codex agent performed an independent, read-only source review; the main assistant applied the resulting corrections.
+- **Superpowers and Ponytail skills:** guided planning, debugging, review, verification and keeping the implementation small.
+- **Browser automation / Playwright:** Computer Use tools with connected Chrome and Playwright-style locators checked deployed analyses, caching, chart controls, health and repository visibility. No standalone Playwright test suite was added.
+- **Supporting tools:** a Node.js REPL handled file operations, PDF text extraction, syntax checks and CSV assertions. Web browsing checked official framework, dependency, weather-provider and hosting documentation.
