@@ -2,7 +2,7 @@
 
 A React and Python web application for exploring historical heatwave frequency, duration, and intensity at a selected city or coordinate.
 
-**Implementation status:** local checks are complete: 39 backend tests passed (user-reported rerun after the test dependency adjustment), three frontend tests passed, the frontend production build succeeded, and all ten manual browser checks passed. Local cache reuse after a backend restart is confirmed for New Delhi and Bengaluru. The Docker container starts successfully and serves the API and built React assets; supplied logs show successful analysis requests. The user confirmed cached results survive container replacement with the same named volume. Public repository publication, hosted deployment and submission remain pending. See [TODO.md](TODO.md) and the [verification record](docs/VERIFICATION.md) for evidence and remaining hosting checks.
+**Implementation status:** local checks are complete: 39 backend tests passed (user-reported rerun after the test dependency adjustment), three frontend tests passed, the frontend production build succeeded, and all ten manual browser checks passed. Local cache reuse after a backend restart is confirmed for New Delhi and Bengaluru. The Docker container starts successfully and serves the API and built React assets; supplied logs show successful analysis requests. The user confirmed cached results survive container replacement with the same named volume. The repository URL has been supplied and matches the local origin remote. Independent public-access verification, hosted deployment and submission remain pending. See [TODO.md](TODO.md) and the [verification record](docs/VERIFICATION.md) for evidence and remaining hosting checks.
 
 ## Features
 
@@ -204,7 +204,7 @@ No application credentials are required for local use. frontend/package-lock.jso
 3. Deploy the container, test the live URL, and submit the repository/app URLs through the separately supplied submission form.
 4. Disclose AI use in the submission form. A demo recording is optional.
 
-Repository and deployed URLs do not yet exist in this delivery. No submission has been sent.
+Repository: [jabhiramreddy-code/climate-hazard-trend-analyzer](https://github.com/jabhiramreddy-code/climate-hazard-trend-analyzer). The user supplied this URL and the local origin remote matches it; public visibility could not be independently checked from Codex. A deployed URL has not yet been supplied. No submission has been sent.
 
 ## Assumptions and improvements with more time
 

@@ -84,3 +84,7 @@ This confirms the supplied Docker image runs and serves frontend and API togethe
 ## Named Docker volume persistence confirmed (2026-10-15)
 
 After instructions to stop the running container and rerun it using the same climate-data named volume, the user confirmed the repeated analysis displayed Stored analysis. This is user-reported validation of cache retention across container replacement. Public repository publication, hosted deployment, hosted storage/proxy behavior and submission remain pending.
+
+## Repository URL supplied (2026-10-15)
+
+The user supplied https://github.com/jabhiramreddy-code/climate-hazard-trend-analyzer.git . Local .git/config contains an origin remote matching this repository. Attempts to independently fetch the GitHub page, public API metadata and raw README were unavailable: the web tool reported cache/access errors and direct Node HTTPS returned EACCES. These errors do not establish that the repository is private or missing. Public visibility and published PDF exclusion therefore remain to be checked in an unsigned browser session. No hosting action or submission was performed.

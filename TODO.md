@@ -1,6 +1,6 @@
 # Assessment implementation plan
 
-**Current status:** local backend tests (39 passed), frontend tests (3 passed), production build, ten manual browser checks, backend restart cache reuse and Docker startup/API/static asset checks are complete. The Starlette warning was reviewed and httpx2 added to development requirements; the user reported 39 tests passing after that change. Public repository publication, hosted deployment and submission remain pending.
+**Current status:** local backend tests (39 passed), frontend tests (3 passed), production build, ten manual browser checks, backend restart cache reuse and Docker startup/API/static asset checks are complete. The Starlette warning was reviewed and httpx2 added to development requirements; the user reported 39 tests passing after that change. The user supplied the GitHub repository URL and the local origin matches it. Independent public visibility/PDF exclusion checks, hosted deployment and submission remain pending.
 
 **Available verification:** six frontend JavaScript/JSX files parsed; nine direct CSV assertions passed; Docker CMD JSON parsed. A separate read-only source review was completed and its corrections/remaining deployment limits are recorded in docs/REVIEW.md. Full command execution is blocked by the environment.
 
@@ -63,7 +63,8 @@ Files: Dockerfile, .dockerignore, .gitignore, render.yaml, README.md, docs/VERIF
 - [x] Record actual checks and unresolved environment limitations.
 - [x] Complete real-data browser analysis and manual UI checks (user-confirmed 2026-10-15).
 - [x] Confirm persisted cache reuse after a backend restart (user-confirmed; live API returns analysis_hit=true and database-matching summaries for New Delhi and Bengaluru, 1990–2020).
-- [ ] Create public GitHub repository containing source only and record its URL.
+- [x] Record user-supplied repository URL: https://github.com/jabhiramreddy-code/climate-hazard-trend-analyzer (local origin matches).
+- [ ] Confirm the repository opens without signing in and the confidential PDF is absent from published files.
 - [ ] Deploy the Python/React service and record a working URL.
 - [ ] Submit the repository and deployment URLs using the external submission form.
 
