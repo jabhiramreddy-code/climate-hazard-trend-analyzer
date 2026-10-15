@@ -2,7 +2,7 @@
 
 A React and Python web application for exploring historical heatwave frequency, duration, and intensity at a selected city or coordinate.
 
-**Implementation status:** source, acceptance tests, and deployment configuration are provided. Frontend syntax and direct CSV assertions passed. Python tests, the production build, real-provider integration, browser rendering, and deployment remain unverified because this session's command runner cannot start processes. See [TODO.md](TODO.md) and [verification record](docs/VERIFICATION.md) before submitting.
+**Implementation status:** local checks are complete: 39 backend tests passed (user-reported rerun after the test dependency adjustment), three frontend tests passed, the frontend production build succeeded, and all ten manual browser checks passed. Local cache reuse after a backend restart is confirmed for New Delhi and Bengaluru. The Docker container starts successfully and serves the API and built React assets; supplied logs show successful analysis requests. The user confirmed cached results survive container replacement with the same named volume. Public repository publication, hosted deployment and submission remain pending. See [TODO.md](TODO.md) and the [verification record](docs/VERIFICATION.md) for evidence and remaining hosting checks.
 
 ## Features
 
@@ -195,11 +195,11 @@ Environment variables:
 | PORT | 8000 in Docker | Hosting platform's listening port |
 | FORWARDED_ALLOW_IPS | 127.0.0.1 | Verified trusted proxy addresses/CIDRs; never an unverified wildcard |
 
-No application credentials are required for local use. A dependency lockfile could not be generated in this session. After the first successful install, commit frontend/package-lock.json and switch the Docker install command to npm ci; freeze the verified Python dependency set for reproducible deployment.
+No application credentials are required for local use. frontend/package-lock.json is present and Docker uses npm ci; commit the lockfile with the source. Python dependencies currently use bounded version ranges; pinning the verified Python dependency set would further improve deployment reproducibility.
 
 ### Submission steps remaining
 
-1. Restore normal command access, run all tests and builds, and verify the real-data browser flow.
+1. Backend tests, the frontend build and the manual real-data browser flow have user-reported passes. Frontend npm test output confirms three passes. The test dependency adjustment and backend rerun are complete; local cache reuse after a backend restart is confirmed.
 2. Create a public GitHub repository and push the source. **Exclude the confidential assessment PDF**, already covered by .gitignore and .dockerignore.
 3. Deploy the container, test the live URL, and submit the repository/app URLs through the separately supplied submission form.
 4. Disclose AI use in the submission form. A demo recording is optional.

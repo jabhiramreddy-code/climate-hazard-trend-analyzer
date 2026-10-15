@@ -128,3 +128,36 @@ def test_cache_is_shared_after_application_restart(tmp_path):
         response = api.post("/api/analyze", json=query())
         assert response.status_code == 200
         assert response.json()["cache"]["analysis_hit"] is True
+
+
+@pytest.mark.parametrize("path", ["/docs", "/docs/oauth2-redirect", "/redoc"])
+def test_documentation_resources_are_allowed_by_scoped_csp(client, path):
+    api, calls = client
+    response = api.get(path)
+    assert response.status_code == 200
+    policy = dict(directive.strip().split(" ", 1) for directive in response.headers["Content-Security-Policy"].split(";") if directive.strip())
+    assert "https://cdn.jsdelivr.net" in policy["script-src"].split()
+    assert "'unsafe-inline'" in policy["script-src"].split()
+    assert "https://cdn.jsdelivr.net" in policy["style-src"].split()
+    assert policy["connect-src"] == "'self'"
+    assert policy["object-src"] == "'none'"
+    assert policy["frame-ancestors"] == "'none'"
+    if path == "/docs":
+        assert "SwaggerUIBundle({" in response.text
+    if path == "/redoc":
+        assert "https://fonts.googleapis.com" in policy["style-src"].split()
+        assert "https://fonts.gstatic.com" in policy["font-src"].split()
+    assert calls == []
+
+
+@pytest.mark.parametrize("path", ["/api/health", "/openapi.json", "/", "/docs/not-a-doc-page"])
+def test_documentation_script_permissions_do_not_reach_app_or_api(client, path):
+    api, calls = client
+    response = api.get(path)
+    policy = response.headers["Content-Security-Policy"]
+    script_policy = next(directive.strip() for directive in policy.split(";") if directive.strip().startswith("script-src "))
+    assert script_policy == "script-src 'self'"
+    assert "https://cdn.jsdelivr.net" not in policy
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert calls == []

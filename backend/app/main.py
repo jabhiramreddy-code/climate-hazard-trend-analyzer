@@ -61,6 +61,14 @@ def create_app(database_path=None, transport=None):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+        # FastAPI's documentation uses CDN assets and an inline Swagger bootstrap.
+        if request.url.path in {app.docs_url, app.redoc_url, app.swagger_ui_oauth2_redirect_url}:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fastapi.tiangolo.com; "
+                "connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+            )
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
         return response
