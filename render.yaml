@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: climate-hazard-trend-analyzer
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATA_PATH
+        value: /tmp/climate/weather.json
+      - key: FORWARDED_ALLOW_IPS
+        value: 127.0.0.1

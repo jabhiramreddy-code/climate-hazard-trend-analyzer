@@ -1,0 +1,13 @@
+**/*.pdf
+.git
+.venv
+**/__pycache__
+**/.pytest_cache
+**/node_modules
+**/dist
+**/data
+**/.env
+**/.env.*
+.verification-runtime
+docs
+backend/tests
